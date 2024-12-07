@@ -177,7 +177,7 @@ class Windows_Azure_Storage_Migrate_Runner
 		echo '<div class="wrap">';
 		echo '<h2>';
 		echo '<img src="' . esc_url(MSFT_AZURE_PLUGIN_URL . 'images/azure-icon.png') . '" alt="' . __('Microsoft Azure', 'windows-azure-storage') . '" style="width:32px">';
-		esc_html_e('Microsoft Azure Storage Migration for WordPress', 'windows-azure-storage');
+		esc_html_e('GTech Microsoft Azure Storage Migration for WordPress', 'windows-azure-storage');
 		echo '</h2>';
 		echo '<p>';
 		if ($disabled) {
