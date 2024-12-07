@@ -210,35 +210,38 @@ class Windows_Azure_Storage_Migrate_Runner
 				'posts_per_page' => 1,
 				'offset' => $page,
 				'orderby' => 'ID',
-				'order' => 'ASC'
+				'order' => 'ASC',
+				'meta_query' => array(
+					'relation' => 'OR',
+					array(
+						'key' => 'windows_azure_storage_info',
+						'compare' => 'NOT EXISTS'
+					),
+					array(
+						'key' => 'windows_azure_storage_info',
+						'value' => '',
+						'compare' => '='
+					)
+				)
 			));
 
 			if ($posts) {
 				foreach ($posts as $post) {
 					$name = $post->post_title . " " . $post->ID;
+					$file = wp_get_attachment_metadata($post->ID, true);
 
-					$existingAzureMeta = get_post_meta($post->ID, "windows_azure_storage_info", true);
-					if (isset($existingAzureMeta) && !empty($existingAzureMeta)) {
-						$result['data'] = $name . " already migrated";
-						$result['type'] = "warning";
-					} else {
-						$file = wp_get_attachment_metadata($post->ID, true);
+					$result['moved'] = windows_azure_storage_wp_generate_attachment_metadata($file, $post->ID);
 
-						$result['moved'] = windows_azure_storage_wp_generate_attachment_metadata($file, $post->ID);
-
-						if ($delete_local) {
-							$result['delete_local'] = windows_azure_storage_delete_local_files($file, $post->ID);
-						}
-						$result['data'] = $name . " migrated";
-						$result['type'] = "success";
+					if ($delete_local) {
+						$result['delete_local'] = windows_azure_storage_delete_local_files($file, $post->ID);
 					}
+					$result['data'] = $name . " migrated";
+					$result['type'] = "success";
 
-					// Update the last migrated position
 					$this->update_migration_position($page);
 				}
 			} else {
 				$result['type'] = "none";
-				// Reset position when complete
 				$this->reset_migration_position();
 			}
 		}
