@@ -2,21 +2,21 @@
 
 /**
  * Plugin Name: Microsoft Azure Storage Migration for WordPress
- * Version: 1.0.0
+ * Version: 2.0.0
  * Plugin URI: https://wordpress.org/plugins/windows_azure_storage_migrate/
  * Description: This will add the ability to migration existing media files to azure for Microsoft Azure Storage for WordPress. This requires the Microsoft Azure Storage for WordPress plugin.
- * Author: Phlux Apps LLC.
- * Author URI: http://www.phluxapps.com/
+ * Author: GTech.
+ * Author URI: http://www.gtechme.com/
  *
  * Text Domain: windows_azure_storage_migrate
  * Domain Path: /lang/
  *
  * @category  WordPress_Plugin
  * @package   Microsoft Azure Storage Migration for WordPress/Runner
- * @author    Phlux Apps LLC.
- * @copyright Phlux Apps LLC.
- * @link      http://www.phluxapps.com
- * @since 1.0.0
+ * @author    GTech.
+ * @copyright GTech.
+ * @link      http://www.gtechme.com
+ * @since 2.0.0
  */
 
 if (! defined('ABSPATH')) {
