@@ -1,5 +1,5 @@
 === Microsoft Azure Storage Migration for WordPress ===
-Contributors: jcphlux
+Contributors: GTech
 Tags: wordpress, plugin, Microsoft, Microsoft Azure, Microsoft Azure Storage, Media Files, Upload, CDN, blob storage
 Requires at least: 4
 Tested up to: 5.3
@@ -32,12 +32,12 @@ or
 
 == Changelog ==
 
-= 1.0 =
-* 2019-12-26
+= 2.0 =
+* 2024-12-07
 * Initial release
 
 == Upgrade Notice ==
 
-= 1.0 =
-* 2012-19-26
+= 2.0 =
+* 2024-12-07
 * Initial release

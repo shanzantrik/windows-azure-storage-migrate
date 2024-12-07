@@ -1,9 +1,10 @@
 # Microsoft Azure Storage Migration for WordPress
-Contributors: jcphlux
+
+Contributors: GTech
 Tags: wordpress, plugin, Microsoft, Microsoft Azure, Microsoft Azure Storage, Media Files, Upload, CDN, blob storage
 Requires at least: 4
 Tested up to: 5.3
-Stable tag: 1.0
+Stable tag: 2.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,21 +19,20 @@ For more details on Microsoft Azure Storage, please visit the <a href="https://a
 
 ## Requirements
 
-* PHP 5.6+
-* [WordPress](http://wordpress.org/) 4.0+
-* [Microsoft Azure Storage for WordPress](https://github.com/10up/windows-azure-storage) 
+- PHP 5.6+
+- [WordPress](http://wordpress.org/) 4.0+
+- [Microsoft Azure Storage for WordPress](https://github.com/10up/windows-azure-storage)
 
 ## Installation
 
-
-> ***Note: WIP This plugin has not been added to WordPress.org yet.***
-> 
+> **_Note: WIP This plugin has not been added to WordPress.org yet._**
+>
 > Installing "Microsoft Azure Storage Migration for WordPress" can be done either by searching for "Microsoft Azure Storage Migration for > > WordPress" via the "Plugins > Add New" screen in your WordPress dashboard, or by using the following steps:
-> 
+>
 > 1. Download the plugin via WordPress.org
 > 1. Upload the ZIP file through the 'Plugins > Add New > Upload' screen in your WordPress dashboard
 > 1. Activate the plugin through the 'Plugins' menu in WordPress
-> 
+>
 > or
 
 1. Upload the plugin files to the `/wp-content/plugins/windows-azure-storage-migrate` directory, or install the plugin through the WordPress plugins screen directly.
@@ -41,12 +41,14 @@ For more details on Microsoft Azure Storage, please visit the <a href="https://a
 
 ## Changelog
 
-### 1.0
-* 2019-12-26
-* Initial release
+### 2.0
+
+- 2024-12-07
+- Initial release
 
 ## Upgrade Notice
 
-### 1.0
-* 2012-19-26
-* Initial release
+### 2.0
+
+- 2024-12-07
+- Initial release
