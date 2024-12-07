@@ -21,31 +21,42 @@ jQuery(document).ready(function($) {
       },
       success: function(response) {
         if (response.type !== "none") {
-          html =
-            '<div class="notice notice-' +
-            response.type +
-            '">' +
-            "<p>" +
-            "<strong>" +
-            response.data +
-            "</strong>" +
-            "</p>" +
-            "</div>";
-          $("#responce").prepend(html);          
+          var html = '<div class="notice notice-' + response.type + '">' +
+                    "<p><strong>" + response.data + "</strong></p>" +
+                    "</div>";
+          $("#responce").prepend(html);
         }
-        if (page++ <= total) {
-          callRunner(page, nonce);
+        if (page < total) {
+          page++;
+          setTimeout(function() {
+            callRunner(page, nonce);
+          }, 1000); // Add a 1-second delay between requests
+        } else {
+          $(".azure-migrate-button").prop("disabled", false);
+          location.reload(); // Reload when complete
         }
+      },
+      error: function() {
+        // On error, enable the button so user can resume
+        $(".azure-migrate-button").prop("disabled", false);
       }
     });
   };
 
   $(".azure-migrate-button").click(function(e) {
     e.preventDefault();
-    $(".azure-migrate-button").prop("disabled", true);
+    $(this).prop("disabled", true);
     total = parseInt($(this).attr("data-total"));
     nonce = $(this).attr("data-nonce");
+    page = parseInt($(this).attr("data-position")) || 0;
 
     callRunner(page, nonce);
+  });
+
+  $(".azure-migrate-reset").click(function(e) {
+    e.preventDefault();
+    if (confirm("Are you sure you want to reset migration progress?")) {
+      location.reload();
+    }
   });
 });
