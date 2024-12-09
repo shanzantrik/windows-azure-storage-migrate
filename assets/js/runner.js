@@ -25,32 +25,33 @@ jQuery(document).ready(function($) {
                     "<p><strong>" + response.data + "</strong></p>" +
                     "</div>";
           $("#responce").prepend(html);
-        }
-        if (page < total) {
+
           page++;
           setTimeout(function() {
             callRunner(page, nonce);
-          }, 1000); // Add a 1-second delay between requests
+          }, 1000);
         } else {
           $(".azure-migrate-button").prop("disabled", false);
-          location.reload(); // Reload when complete
+          alert("Migration completed!");
+          location.reload();
         }
       },
-      error: function() {
-        // On error, enable the button so user can resume
+      error: function(xhr, status, error) {
+        console.error("Error:", error);
         $(".azure-migrate-button").prop("disabled", false);
+        alert("An error occurred. Please try again.");
       }
     });
   };
 
   $(".azure-migrate-button").click(function(e) {
     e.preventDefault();
-    $(this).prop("disabled", true);
-    total = parseInt($(this).attr("data-total"));
-    nonce = $(this).attr("data-nonce");
-    page = parseInt($(this).attr("data-position")) || 0;
-
-    callRunner(page, nonce);
+    if (confirm("This will migrate ALL files in your uploads directory to Azure. Continue?")) {
+      $(this).prop("disabled", true);
+      nonce = $(this).attr("data-nonce");
+      page = parseInt($(this).attr("data-position")) || 0;
+      callRunner(page, nonce);
+    }
   });
 
   $(".azure-migrate-reset").click(function(e) {

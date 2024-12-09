@@ -66,6 +66,9 @@ class Windows_Azure_Storage_Migrate_Runner
 	 * @since   1.0.0
 	 */
 	private $option_name = 'wasm_last_migrated_position';
+	private $processed_files_option = 'wasm_processed_files';
+	private $uploads_dir;
+	private $uploads_url;
 
 	/**
 	 * Constructor function.
@@ -79,6 +82,11 @@ class Windows_Azure_Storage_Migrate_Runner
 		$this->parent = $parent;
 
 		$this->base = 'wam_';
+
+		// Get WordPress uploads directory info
+		$upload_dir = wp_upload_dir();
+		$this->uploads_dir = $upload_dir['basedir'];
+		$this->uploads_url = $upload_dir['baseurl'];
 
 		// Add runner page to menu.
 		add_action('admin_menu', array($this, 'add_menu_item'));
@@ -199,54 +207,140 @@ class Windows_Azure_Storage_Migrate_Runner
 	function windows_azure_storage_migrate_media()
 	{
 		if (!wp_verify_nonce($_REQUEST['nonce'], "windows_azure_storage_runner_nonce")) {
-			$result['data'] = "Invalid request";
-			$result['type'] = "error";
-		} else {
-			$page = intval($_REQUEST["page"]);
-			$delete_local = Windows_Azure_Helper::delete_local_file();
-
-			$posts = get_posts(array(
-				'post_type' => "attachment",
-				'posts_per_page' => 1,
-				'offset' => $page,
-				'orderby' => 'ID',
-				'order' => 'ASC',
-				'meta_query' => array(
-					'relation' => 'OR',
-					array(
-						'key' => 'windows_azure_storage_info',
-						'compare' => 'NOT EXISTS'
-					),
-					array(
-						'key' => 'windows_azure_storage_info',
-						'value' => '',
-						'compare' => '='
-					)
-				)
-			));
-
-			if ($posts) {
-				foreach ($posts as $post) {
-					$name = $post->post_title . " " . $post->ID;
-					$file = wp_get_attachment_metadata($post->ID, true);
-
-					$result['moved'] = windows_azure_storage_wp_generate_attachment_metadata($file, $post->ID);
-
-					if ($delete_local) {
-						$result['delete_local'] = windows_azure_storage_delete_local_files($file, $post->ID);
-					}
-					$result['data'] = $name . " migrated";
-					$result['type'] = "success";
-
-					$this->update_migration_position($page);
-				}
-			} else {
-				$result['type'] = "none";
-				$this->reset_migration_position();
-			}
+			wp_send_json(array('type' => 'error', 'data' => 'Invalid request'));
+			return;
 		}
 
-		wp_send_json($result);
+		$page = intval($_REQUEST["page"]);
+		$processed_files = get_option($this->processed_files_option, array());
+
+		// Get all files if not already scanned
+		$all_files = get_option('wasm_all_files');
+		if (empty($all_files)) {
+			$all_files = $this->scan_uploads_directory();
+			update_option('wasm_all_files', $all_files);
+		}
+
+		// Get current file
+		if (isset($all_files[$page])) {
+			$current_file = $all_files[$page];
+
+			// Skip if already processed
+			if (in_array($current_file, $processed_files)) {
+				wp_send_json(array(
+					'type' => 'warning',
+					'data' => basename($current_file) . ' already migrated'
+				));
+				return;
+			}
+
+			// Upload to Azure
+			if ($this->upload_to_azure($current_file)) {
+				// Add to processed files
+				$processed_files[] = $current_file;
+				update_option($this->processed_files_option, $processed_files);
+
+				// Update URLs in database
+				$this->update_urls_in_database($current_file);
+
+				wp_send_json(array(
+					'type' => 'success',
+					'data' => basename($current_file) . ' migrated'
+				));
+			} else {
+				wp_send_json(array(
+					'type' => 'error',
+					'data' => 'Failed to migrate ' . basename($current_file)
+				));
+			}
+		} else {
+			// No more files to process
+			delete_option('wasm_all_files');
+			wp_send_json(array('type' => 'none'));
+		}
+	}
+
+	private function scan_uploads_directory($dir = '')
+	{
+		$files = array();
+		$scan_dir = $dir ? $dir : $this->uploads_dir;
+
+		$items = scandir($scan_dir);
+		foreach ($items as $item) {
+			if ($item == '.' || $item == '..') continue;
+
+			$path = $scan_dir . DIRECTORY_SEPARATOR . $item;
+			if (is_dir($path)) {
+				$files = array_merge($files, $this->scan_uploads_directory($path));
+			} else {
+				$files[] = str_replace($this->uploads_dir . DIRECTORY_SEPARATOR, '', $path);
+			}
+		}
+		return $files;
+	}
+
+	private function upload_to_azure($file_path)
+	{
+		if (!file_exists($this->uploads_dir . DIRECTORY_SEPARATOR . $file_path)) {
+			return false;
+		}
+
+		$azure_storage = Windows_Azure_Helper::get_storage_client();
+		$container = Windows_Azure_Helper::get_default_container();
+
+		try {
+			// Upload file to Azure
+			$azure_path = str_replace('\\', '/', $file_path);
+			$content_type = mime_content_type($this->uploads_dir . DIRECTORY_SEPARATOR . $file_path);
+
+			$azure_storage->putBlob(
+				$container,
+				$azure_path,
+				$this->uploads_dir . DIRECTORY_SEPARATOR . $file_path,
+				array('contentType' => $content_type)
+			);
+
+			return true;
+		} catch (Exception $e) {
+			error_log('Azure Upload Error: ' . $e->getMessage());
+			return false;
+		}
+	}
+
+	private function update_urls_in_database($file_path)
+	{
+		global $wpdb;
+
+		$old_url = $this->uploads_url . '/' . str_replace('\\', '/', $file_path);
+		$new_url = Windows_Azure_Helper::get_storage_url_prefix() . '/' . str_replace('\\', '/', $file_path);
+
+		// Update posts content
+		$wpdb->query($wpdb->prepare(
+			"UPDATE {$wpdb->posts}
+			SET post_content = REPLACE(post_content, %s, %s)",
+			$old_url,
+			$new_url
+		));
+
+		// Update post meta
+		$wpdb->query($wpdb->prepare(
+			"UPDATE {$wpdb->postmeta}
+			SET meta_value = REPLACE(meta_value, %s, %s)
+			WHERE meta_value LIKE %s",
+			$old_url,
+			$new_url,
+			'%' . $wpdb->esc_like($old_url) . '%'
+		));
+
+		// Update options
+		$wpdb->query($wpdb->prepare(
+			"UPDATE {$wpdb->options}
+			SET option_value = REPLACE(option_value, %s, %s)
+			WHERE option_value LIKE %s",
+			$old_url,
+			$new_url,
+			'%' . $wpdb->esc_like($old_url) . '%'
+		));
 	}
 
 	/**
